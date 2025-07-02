@@ -37,3 +37,7 @@ buf dep update
 ```
 
 ### gRPC gateway
+
+```
+go get github.com/grpc-ecosystem/grpc-gateway/v2/runtime
+```
