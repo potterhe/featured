@@ -29,3 +29,11 @@ protoc --go_out=. --go_opt=paths=source_relative \
 ```
 buf generate
 ```
+
+`buf.yaml` Always run `buf dep update` after adding a dependency to your buf.yaml
+
+```
+buf dep update
+```
+
+### gRPC gateway

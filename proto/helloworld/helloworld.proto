@@ -19,10 +19,17 @@ option go_package = "github.com/potterhe/featured/proto/helloworld";
 
 package helloworld;
 
+import "google/api/annotations.proto";
+
 // The greeting service definition.
 service Greeter {
   // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SayHello (HelloRequest) returns (HelloReply) {
+    option (google.api.http) = {
+      post: "/v1/example/echo"
+      body: "*"
+    };
+  }
 }
 
 // The request message containing the user's name.
