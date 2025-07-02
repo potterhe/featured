@@ -22,6 +22,11 @@ protoc --go_out=. --go_opt=paths=source_relative \
     proto/helloworld/helloworld.proto
 ```
 
+```
+grpcurl -plaintext -d '{"name": "world"}' \
+    127.0.0.1:50051 helloworld.Greeter/SayHello
+```
+
 ### buf
 
 [buf](https://github.com/bufbuild/buf)
