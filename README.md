@@ -21,3 +21,11 @@ protoc --go_out=. --go_opt=paths=source_relative \
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
     proto/helloworld/helloworld.proto
 ```
+
+### buf
+
+[buf](https://github.com/bufbuild/buf)
+
+```
+buf generate
+```
