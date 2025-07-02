@@ -4,14 +4,22 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/potterhe/featured/internal/server"
-	pb "github.com/potterhe/featured/proto/helloworld"
+	helloworldpb "github.com/potterhe/featured/proto/helloworld"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+)
+
+var (
+	grpcServerEndpoint = "localhost:50051"
 )
 
 // serveCmd represents the serve command
@@ -27,17 +35,35 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("serve called")
 
-		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 50051))
+		lis, err := net.Listen("tcp", grpcServerEndpoint)
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
 
 		s := grpc.NewServer()
-		pb.RegisterGreeterServer(s, &server.Server{})
+		helloworldpb.RegisterGreeterServer(s, &server.Server{})
+		reflection.Register(s)
 		log.Printf("server listening at %v", lis.Addr())
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+		go func() {
+			log.Fatalln(s.Serve(lis))
+		}()
+
+		gwmux := runtime.NewServeMux()
+		// Register Greeter
+		ctx := context.Background()
+		otps := []grpc.DialOption{grpc.WithInsecure()}
+		helloworldpb.RegisterGreeterHandlerFromEndpoint(ctx, gwmux, grpcServerEndpoint, otps)
+		if err != nil {
+			log.Fatalln("Failed to register gateway:", err)
 		}
+
+		gwServer := &http.Server{
+			Addr:    ":8090",
+			Handler: gwmux,
+		}
+
+		log.Println("Serving gRPC-Gateway on http://0.0.0.0:8090")
+		log.Fatalln(gwServer.ListenAndServe())
 	},
 }
 
