@@ -12,6 +12,7 @@ import (
 	pb "github.com/potterhe/featured/proto/helloworld"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 // serveCmd represents the serve command
@@ -34,6 +35,7 @@ to quickly create a Cobra application.`,
 
 		s := grpc.NewServer()
 		pb.RegisterGreeterServer(s, &server.Server{})
+		reflection.Register(s)
 		log.Printf("server listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
