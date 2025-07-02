@@ -46,3 +46,7 @@ buf dep update
 ```
 go get github.com/grpc-ecosystem/grpc-gateway/v2/runtime
 ```
+
+```
+curl -X POST -k http://localhost:8090/v1/example/echo -d '{"name": "world"}'
+```
