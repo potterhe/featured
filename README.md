@@ -23,6 +23,7 @@ protoc --go_out=. --go_opt=paths=source_relative \
 ```
 
 ```
+grpcurl -plaintext 127.0.0.1:50051 list
 grpcurl -plaintext -d '{"name": "world"}' \
     127.0.0.1:50051 helloworld.Greeter/SayHello
 ```
