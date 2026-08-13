@@ -14,6 +14,11 @@ go mod init github.com/potterhe/featured
 cobra-cli init --viper
 ```
 
+### Install Tools
+```
+go install tool
+```
+
 ### gRPC
 
 ```
