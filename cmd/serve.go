@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/grpc"
@@ -46,6 +47,7 @@ to quickly create a Cobra application.`,
 			log.Fatalf("failed to create prometheus exporter: %v", err)
 		}
 		provider := metric.NewMeterProvider(metric.WithReader(exporter))
+		otel.SetMeterProvider(provider)
 		defer func() {
 			if err := provider.Shutdown(ctx); err != nil {
 				log.Printf("failed to shutdown meter provider: %v", err)
