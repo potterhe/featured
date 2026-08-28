@@ -20,7 +20,10 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -51,6 +54,21 @@ to quickly create a Cobra application.`,
 		defer func() {
 			if err := provider.Shutdown(ctx); err != nil {
 				log.Printf("failed to shutdown meter provider: %v", err)
+			}
+		}()
+
+		// Set up stdout trace exporter
+		traceExporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+		if err != nil {
+			log.Fatalf("failed to create trace exporter: %v", err)
+		}
+		tp := trace.NewTracerProvider(trace.WithBatcher(traceExporter))
+		otel.SetTracerProvider(tp)
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{}, propagation.Baggage{}))
+		defer func() {
+			if err := tp.Shutdown(ctx); err != nil {
+				log.Printf("failed to shutdown tracer provider: %v", err)
 			}
 		}()
 
