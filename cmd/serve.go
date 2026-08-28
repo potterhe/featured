@@ -75,6 +75,14 @@ to quickly create a Cobra application.`,
 		)
 		pb.RegisterGreeterServer(s, &server.Server{})
 		reflection.Register(s)
+
+		// Graceful shutdown on signal
+		go func() {
+			<-ctx.Done()
+			log.Println("shutting down gRPC server...")
+			s.GracefulStop()
+		}()
+
 		log.Printf("server listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
