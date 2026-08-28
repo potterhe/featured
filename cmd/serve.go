@@ -4,13 +4,23 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/potterhe/featured/internal/server"
 	pb "github.com/potterhe/featured/proto/helloworld"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -28,14 +38,51 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("serve called")
 
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+
+		// Set up Prometheus exporter
+		exporter, err := prometheus.New()
+		if err != nil {
+			log.Fatalf("failed to create prometheus exporter: %v", err)
+		}
+		provider := metric.NewMeterProvider(metric.WithReader(exporter))
+		otel.SetMeterProvider(provider)
+		defer func() {
+			if err := provider.Shutdown(ctx); err != nil {
+				log.Printf("failed to shutdown meter provider: %v", err)
+			}
+		}()
+
+		// Start Prometheus metrics HTTP server
+		go func() {
+			mux := http.NewServeMux()
+			mux.Handle("/metrics", promhttp.Handler())
+			metricsAddr := ":9090"
+			log.Printf("prometheus metrics server listening at %s/metrics", metricsAddr)
+			if err := http.ListenAndServe(metricsAddr, mux); err != nil {
+				log.Fatalf("failed to start metrics server: %v", err)
+			}
+		}()
+
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 50051))
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
 
-		s := grpc.NewServer()
+		s := grpc.NewServer(
+			grpc.StatsHandler(otelgrpc.NewServerHandler()),
+		)
 		pb.RegisterGreeterServer(s, &server.Server{})
 		reflection.Register(s)
+
+		// Graceful shutdown on signal
+		go func() {
+			<-ctx.Done()
+			log.Println("shutting down gRPC server...")
+			s.GracefulStop()
+		}()
+
 		log.Printf("server listening at %v", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
