@@ -22,9 +22,9 @@ func init() {
 }
 
 // SayHello implements helloworld.GreeterServer
-func (s *Server) SayHello(_ context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	helloCnt.Add(context.TODO(), 1)
+func (s *Server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	helloCnt.Add(ctx, 1)
 
-	slog.Info("received request", slog.String("name", in.GetName()))
+	slog.InfoContext(ctx, "received request", slog.String("name", in.GetName()))
 	return &pb.HelloReply{Message: "Hello " + in.GetName()}, nil
 }
