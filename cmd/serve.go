@@ -20,8 +20,11 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/stdout/stdoutlog"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	"go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/grpc"
@@ -54,6 +57,19 @@ to quickly create a Cobra application.`,
 		defer func() {
 			if err := provider.Shutdown(ctx); err != nil {
 				log.Printf("failed to shutdown meter provider: %v", err)
+			}
+		}()
+
+		// Set up stdout log exporter
+		logExporter, err := stdoutlog.New()
+		if err != nil {
+			log.Fatalf("failed to create log exporter: %v", err)
+		}
+		lp := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)))
+		global.SetLoggerProvider(lp)
+		defer func() {
+			if err := lp.Shutdown(ctx); err != nil {
+				log.Printf("failed to shutdown logger provider: %v", err)
 			}
 		}()
 
