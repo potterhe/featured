@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -17,6 +18,7 @@ import (
 	pb "github.com/potterhe/featured/proto/helloworld"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/prometheus"
@@ -67,6 +69,7 @@ to quickly create a Cobra application.`,
 		}
 		lp := sdklog.NewLoggerProvider(sdklog.WithProcessor(sdklog.NewBatchProcessor(logExporter)))
 		global.SetLoggerProvider(lp)
+		slog.SetDefault(otelslog.NewLogger("featured"))
 		defer func() {
 			if err := lp.Shutdown(ctx); err != nil {
 				log.Printf("failed to shutdown logger provider: %v", err)
